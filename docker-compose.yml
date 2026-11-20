@@ -1,0 +1,42 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./reports:/app/reports
+      - ./saved_models:/app/saved_models
+      - ./logs:/app/logs
+    environment:
+      - SECRET_KEY=medai_secret_key_change_in_production_2026
+      - DATABASE_URL=sqlite:///./backend/database/medai.db
+      - DEBUG=True
+    command: uvicorn backend.main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - medai_network
+
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8501:8501"
+    volumes:
+      - ./uploads:/app/uploads
+      - ./reports:/app/reports
+    environment:
+      - API_BASE_URL=http://backend:8000
+    depends_on:
+      - backend
+    command: streamlit run app/main.py --server.port 8501 --server.address 0.0.0.0
+    networks:
+      - medai_network
+
+networks:
+  medai_network:
+    driver: bridge
